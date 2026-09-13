@@ -9,6 +9,7 @@ on:
   pull_request:
     branches:
       - "*"
+  workflow_dispatch:
 
 # Cancel running jobs for the same workflow and branch.
 concurrency:
