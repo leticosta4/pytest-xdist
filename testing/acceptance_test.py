@@ -1758,4 +1758,4 @@ def test_dist_in_addopts(pytester: pytest.Pytester) -> None:
     result = pytester.runpytest()
     assert result.ret == 0
 
-# track-flaky: commit trivial para disparar CI (2026-09-28)
+# track-flaky: commit trivial para disparar CI (2026-09-29)
