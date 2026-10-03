@@ -249,7 +249,7 @@ class LoadScopeScheduling:
         nodeid = self.registered_collections[node][item_index]
         scope = self._split_scope(nodeid)
 
-        self.assigned_work[node][scope][nodeid] = True
+        self.assigned_work[node][scope][nodeid] = None
         self._reschedule(node)
 
     def mark_test_pending(self, item: str) -> NoReturn:
