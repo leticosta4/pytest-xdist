@@ -1,0 +1,67 @@
+name: test-regsmart-nr
+
+on:
+  push:
+    branches:
+      - master
+      - "test-me-*"
+      - track-flaky
+
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
+
+# Cancel running jobs for the same workflow and branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGSMART_PACKAGE: "git+https://github.com/leticosta4/pytest-regsmart@eade339d65eec2d0735d023c760ab01697afbc68"
+
+jobs:
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: Build and Check Package
+      uses: hynek/build-and-inspect-python-package@v2.18
+
+  test-regsmart-nr:
+
+    needs: [package]
+    runs-on: ubuntu-latest
+    env:
+      TOX_ENV: py312-pytestlatest
+      PYTHON: "3.12"
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        # Needed to fetch tags, which are required by setuptools-scm.
+        fetch-depth: 0
+
+    - name: Download Package
+      uses: actions/download-artifact@v8
+      with:
+        name: Packages
+        path: dist
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ env.PYTHON }}
+
+    - name: Install tox (py3.12)
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox
+
+    - name: Test regsmart-nr
+      run: |
+        tox run -e ${{ env.TOX_ENV }} \
+          --installpkg "$(find dist/*.whl)" \
+          -x "testenv.deps+=$REGSMART_PACKAGE" \
+          -- --regsmart --no-rank
