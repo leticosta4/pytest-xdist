@@ -1,0 +1,95 @@
+name: test-ranking
+
+on:
+  push:
+    branches:
+      - master
+      - "test-me-*"
+      - track-flaky
+
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
+
+# Cancel running jobs for the same workflow and branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  RANKING_PACKAGE: "pytest-ranking"
+
+jobs:
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: Build and Check Package
+      uses: hynek/build-and-inspect-python-package@v2.18
+
+  test:
+    name: ranking (${{ matrix.mode }})
+    needs: [package]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: rkn_qtf
+            weight: "1-0-0"
+          - mode: rkn_recentfail
+            weight: "0-1-0"
+          - mode: rkn_simchgpath
+            weight: "0-0-1"
+          - mode: rkn_hybrid
+            weight: "1-1-1"
+    env:
+      TOX_ENV: py312-pytestlatest
+      PYTHON: "3.12"
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        # Needed to fetch tags, which are required by setuptools-scm.
+        fetch-depth: 0
+
+    - name: Download Package
+      uses: actions/download-artifact@v8
+      with:
+        name: Packages
+        path: dist
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ env.PYTHON }}
+
+    - name: Install tox (py3.12)
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox
+
+    - name: Restore pytest-ranking cache
+      id: restore-pytest-ranking-cache
+      if: always()
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ github.workspace }}/.pytest_cache/v/pytest_ranking_data
+        key: pytest-ranking-cache-${{ github.workflow }}-${{ runner.os }}-${{ matrix.mode }}
+
+    - name: Test ranking
+      run: |
+        tox run -e ${{ env.TOX_ENV }} \
+          --installpkg "$(find dist/*.whl)" \
+          -x "testenv.deps+=$RANKING_PACKAGE" \
+          -- --rank --rank-weight=${{ matrix.weight }}
+
+    - name: Save pytest-ranking cache
+      id: save-pytest-ranking-cache
+      if: always()
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ github.workspace }}/.pytest_cache/v/pytest_ranking_data
+        key: pytest-ranking-cache-${{ github.workflow }}-${{ runner.os }}-${{ matrix.mode }}-${{ github.run_id }}
