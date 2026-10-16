@@ -1,0 +1,93 @@
+name: test-regsmart
+
+on:
+  push:
+    branches:
+      - master
+      - "test-me-*"
+      - track-flaky
+
+  pull_request:
+    branches:
+      - "*"
+  workflow_dispatch:
+
+# Cancel running jobs for the same workflow and branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGSMART_PACKAGE: "git+https://github.com/leticosta4/pytest-regsmart@eade339d65eec2d0735d023c760ab01697afbc68"
+
+jobs:
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - name: Build and Check Package
+      uses: hynek/build-and-inspect-python-package@v2.18
+
+  test:
+    name: regsmart (${{ matrix.mode }})
+    needs: [package]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: rgsm_qtf
+            weight: "1-0"
+          - mode: rgsm_recentfail
+            weight: "0-1"
+          - mode: rgsm_hybrid
+            weight: "1-1"
+    env:
+      TOX_ENV: py312-pytestlatest
+      PYTHON: "3.12"
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        # Needed to fetch tags, which are required by setuptools-scm.
+        fetch-depth: 0
+
+    - name: Download Package
+      uses: actions/download-artifact@v8
+      with:
+        name: Packages
+        path: dist
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ env.PYTHON }}
+
+    - name: Install tox (py3.12)
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox
+
+    - name: Restore pytest-regsmart cache
+      id: restore-pytest-regsmart-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ github.workspace }}/.pytest_cache/v/pytest_ranked_selection_data
+        key: pytest-regsmart-cache-${{ github.workflow }}-${{ runner.os }}-${{ matrix.mode }}
+        restore-keys: |
+          pytest-regsmart-cache-${{ github.workflow }}-${{ runner.os }}-${{ matrix.mode }}-
+
+    - name: Test regsmart
+      run: |
+        tox run -e ${{ env.TOX_ENV }} \
+          --installpkg "$(find dist/*.whl)" \
+          -x "testenv.deps+=$REGSMART_PACKAGE" \
+          -- --regsmart --ranking-weight=${{ matrix.weight }}
+        
+    - name: Save pytest-regsmart cache
+      if: always()
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ github.workspace }}/.pytest_cache/v/pytest_ranked_selection_data
+        key: pytest-regsmart-cache-${{ github.workflow }}-${{ runner.os }}-${{ matrix.mode }}-${{ github.run_id }}
