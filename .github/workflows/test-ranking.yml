@@ -78,13 +78,17 @@ jobs:
       with:
         path: ${{ github.workspace }}/.pytest_cache/v/pytest_ranking_data
         key: pytest-ranking-cache-${{ github.workflow }}-${{ runner.os }}-${{ matrix.mode }}
+        restore-keys: |
+          pytest-ranking-cache-${{ github.workflow }}-${{ runner.os }}-${{ matrix.mode }}-
 
     - name: Test ranking
       run: |
         tox run -e ${{ env.TOX_ENV }} \
           --installpkg "$(find dist/*.whl)" \
           -x "testenv.deps+=$RANKING_PACKAGE" \
-          -- --rank --rank-weight=${{ matrix.weight }}
+          -x "testenv.deps+=pytest-reportlog" \
+          -- --rank --rank-weight=${{ matrix.weight }} \
+             --report-log="$GITHUB_WORKSPACE/reportlog.jsonl"
 
     - name: Save pytest-ranking cache
       id: save-pytest-ranking-cache
@@ -93,3 +97,12 @@ jobs:
       with:
         path: ${{ github.workspace }}/.pytest_cache/v/pytest_ranking_data
         key: pytest-ranking-cache-${{ github.workflow }}-${{ runner.os }}-${{ matrix.mode }}-${{ github.run_id }}
+
+    - name: Upload report-log
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: reportlog-${{ matrix.mode }}
+        path: reportlog.jsonl
+        retention-days: 14
+
