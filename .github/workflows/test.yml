@@ -60,4 +60,13 @@ jobs:
       run: |
         tox run -e ${{ env.TOX_ENV }} \
           --installpkg "$(find dist/*.whl)" \
-          -- -p no:pytest-regsmart -p no:pytest-ranking
+          -x "testenv.deps+=pytest-reportlog" \
+          -- --report-log="$GITHUB_WORKSPACE/reportlog.jsonl"
+
+    - name: Upload report-log
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: reportlog-baseline
+        path: reportlog.jsonl
+        retention-days: 14

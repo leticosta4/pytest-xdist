@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGSMART_PACKAGE: "git+https://github.com/leticosta4/pytest-regsmart@eade339d65eec2d0735d023c760ab01697afbc68"
+  REGSMART_PACKAGE: "git+https://github.com/leticosta4/pytest-regsmart@71e176c9c867760a6abd5d4fa1a8efc81486bbcd"
 
 jobs:
 
@@ -83,7 +83,9 @@ jobs:
         tox run -e ${{ env.TOX_ENV }} \
           --installpkg "$(find dist/*.whl)" \
           -x "testenv.deps+=$REGSMART_PACKAGE" \
-          -- --regsmart --ranking-weight=${{ matrix.weight }}
+          -x "testenv.deps+=pytest-reportlog" \
+          -- --regsmart --ranking-weight=${{ matrix.weight }} \
+             --report-log="$GITHUB_WORKSPACE/reportlog.jsonl"
         
     - name: Save pytest-regsmart cache
       if: always()
@@ -91,3 +93,11 @@ jobs:
       with:
         path: ${{ github.workspace }}/.pytest_cache/v/pytest_ranked_selection_data
         key: pytest-regsmart-cache-${{ github.workflow }}-${{ runner.os }}-${{ matrix.mode }}-${{ github.run_id }}
+
+    - name: Upload report-log
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: reportlog-${{ matrix.mode }}
+        path: reportlog.jsonl
+        retention-days: 14
