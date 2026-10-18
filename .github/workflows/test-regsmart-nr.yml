@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGSMART_PACKAGE: "git+https://github.com/leticosta4/pytest-regsmart@eade339d65eec2d0735d023c760ab01697afbc68"
+  REGSMART_PACKAGE: "git+https://github.com/leticosta4/pytest-regsmart@71e176c9c867760a6abd5d4fa1a8efc81486bbcd"
 
 jobs:
 
@@ -64,4 +64,15 @@ jobs:
         tox run -e ${{ env.TOX_ENV }} \
           --installpkg "$(find dist/*.whl)" \
           -x "testenv.deps+=$REGSMART_PACKAGE" \
-          -- --regsmart --no-rank
+          -x "testenv.deps+=pytest-reportlog" \
+          -- --regsmart --no-rank \
+             --report-log="$GITHUB_WORKSPACE/reportlog.jsonl"
+
+    - name: Upload report-log
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: reportlog-regsmart-nr
+        path: reportlog.jsonl
+        retention-days: 14
+
