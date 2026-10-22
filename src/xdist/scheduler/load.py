@@ -61,7 +61,7 @@ class LoadScheduling:
         self.numnodes = len(parse_tx_spec_config(config))
         self.node2collection: dict[WorkerController, list[str]] = {}
         self.node2pending: dict[WorkerController, list[int]] = {}
-        self.pending: list[int] = []
+        self.pending: list[int] = None
         self.collection: list[str] | None = None
         if log is None:
             self.log = Producer("loadsched")
