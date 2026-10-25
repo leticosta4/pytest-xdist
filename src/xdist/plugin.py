@@ -425,7 +425,7 @@ def pytest_cmdline_main(config: pytest.Config) -> None:
         config.option.dist = "load"
 
     usepdb = config.getoption("usepdb", False)  # a core option
-    if config.option.numprocesses in ("auto", "logical"):
+    if config.option.numprocesses not in ("auto", "logical"):
         if usepdb:
             config.option.numprocesses = 0
             config.option.dist = "no"
