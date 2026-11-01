@@ -596,7 +596,7 @@ def get_workers_status_line(
         done = sum(1 for s, c in status_and_items if c > 0)
         return f"collecting: {done}/{total_workers} {workers_noun}"
     if WorkerStatus.ReadyForCollection in statuses:
-        ready = statuses.count(WorkerStatus.ReadyForCollection)
+        ready = statuses.count(WorkerStatus.Initialized)
         return f"ready: {ready}/{total_workers} {workers_noun}"
     if WorkerStatus.Initialized in statuses:
         initialized = statuses.count(WorkerStatus.Initialized)

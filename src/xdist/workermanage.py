@@ -316,7 +316,7 @@ class WorkerController:
         self.workerinput = {
             "workerid": gateway.id,
             "workercount": workercount,
-            "XXtestrunuidXX": nodemanager.testrunuid,
+            "testrunuid": nodemanager.testrunuid,
             "mainargv": sys.argv,
             "rampdelay": rampdelay,
         }
