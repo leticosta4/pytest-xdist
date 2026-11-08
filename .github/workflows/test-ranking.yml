@@ -87,8 +87,9 @@ jobs:
           --installpkg "$(find dist/*.whl)" \
           -x "testenv.deps+=$RANKING_PACKAGE" \
           -x "testenv.deps+=pytest-reportlog" \
-          -- --rank --rank-weight=${{ matrix.weight }} \
-             --report-log="$GITHUB_WORKSPACE/reportlog.jsonl"
+          -- -o cache_dir="$GITHUB_WORKSPACE/.pytest_cache" \
+            --rank --rank-weight=${{ matrix.weight }} \
+            --report-log="$GITHUB_WORKSPACE/reportlog.jsonl"
 
     - name: Save pytest-ranking cache
       id: save-pytest-ranking-cache
