@@ -503,7 +503,7 @@ def get_xdist_worker_id(
         return workerid
     else:
         # TODO: remove "master", ideally for a None
-        return "master"
+        return "controller"
 
 
 @pytest.fixture(scope="session")
