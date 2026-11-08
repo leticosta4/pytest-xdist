@@ -168,7 +168,7 @@ class NodeManager:
 
         return {
             "ignores": ignores,
-            "verbose": getattr(self.config.option, "verbose", 0),
+            "XXverboseXX": getattr(self.config.option, "verbose", 0),
         }
 
     def rsync(
